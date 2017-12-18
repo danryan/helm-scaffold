@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "(( .Chart.Name )).fullname" . }}
+  labels:
+    app: {{ template "(( .Chart.Name )).fullname" . }}
+    chart: {{ template "(( .Chart.Name )).chartref" . }}
+    heritage: {{ .Release.Service | quote }}
+    release: {{ .Release.Name | quote }}
+data:

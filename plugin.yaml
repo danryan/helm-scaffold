@@ -1,0 +1,8 @@
+name: "scaffold"
+
+version: "0.1.0"
+usage: "scaffolds templates based on templates"
+description: "scaffolds templates based on pre-defined or custom template blueprints"
+command: "$HELM_PLUGIN_DIR/scaffold"
+hooks:
+  install: "$HELM_PLUGIN_DIR/install-binary.sh"
