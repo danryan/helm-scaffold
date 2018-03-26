@@ -1,0 +1,12 @@
+\apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ template "(( .Chart.Name )).fullname" . }}
+  labels:
+    app: {{ template "(( .Chart.Name )).name" . }}
+    chart: {{ template "(( .Chart.Name )).chartref" . }}
+    heritage: {{ .Release.Service | quote }}
+    release: {{ .Release.Name | quote }}
+type: Opaque
+data: {}
+{{- end -}}

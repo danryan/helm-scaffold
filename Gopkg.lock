@@ -14,6 +14,12 @@
   version = "v1.4.0"
 
 [[projects]]
+  name = "github.com/davecgh/go-spew"
+  packages = ["spew"]
+  revision = "346938d642f2ec3594ed81d874461961cd0faa76"
+  version = "v1.1.0"
+
+[[projects]]
   name = "github.com/ghodss/yaml"
   packages = ["."]
   revision = "0ca9ea5df5451ffdf184b4428c902747c2c11cd7"
@@ -21,15 +27,28 @@
 
 [[projects]]
   name = "github.com/gobwas/glob"
-  packages = [".","compiler","match","syntax","syntax/ast","syntax/lexer","util/runes","util/strings"]
-  revision = "bea32b9cd2d6f55753d94a28e959b13f0244797a"
-  version = "v0.2.2"
+  packages = [
+    ".",
+    "compiler",
+    "match",
+    "syntax",
+    "syntax/ast",
+    "syntax/lexer",
+    "util/runes",
+    "util/strings"
+  ]
+  revision = "5ccd90ef52e1e632236f7326478d4faa74f99438"
+  version = "v0.2.3"
 
 [[projects]]
-  branch = "master"
   name = "github.com/golang/protobuf"
-  packages = ["proto","ptypes/any","ptypes/timestamp"]
-  revision = "1643683e1b54a9e88ad26d98f81400c8c9d9f4f9"
+  packages = [
+    "proto",
+    "ptypes/any",
+    "ptypes/timestamp"
+  ]
+  revision = "925541529c1fa6821df4e44ce2723319eb2be768"
+  version = "v1.0.0"
 
 [[projects]]
   name = "github.com/inconshreveable/mousetrap"
@@ -38,10 +57,19 @@
   version = "v1.0"
 
 [[projects]]
+  name = "github.com/spf13/afero"
+  packages = [
+    ".",
+    "mem"
+  ]
+  revision = "bb8f1927f2a9d3ab41c9340aa034f6b803f4359c"
+  version = "v1.0.2"
+
+[[projects]]
+  branch = "master"
   name = "github.com/spf13/cobra"
   packages = ["."]
-  revision = "7b2c5ac9fc04fc5efafb60700713d4fa609b777b"
-  version = "v0.0.1"
+  revision = "a1f051bc3eba734da4772d60e2d677f47cf93ef4"
 
 [[projects]]
   name = "github.com/spf13/pflag"
@@ -50,26 +78,46 @@
   version = "v1.0.0"
 
 [[projects]]
-  branch = "v2"
+  name = "golang.org/x/text"
+  packages = [
+    "internal/gen",
+    "internal/triegen",
+    "internal/ucd",
+    "transform",
+    "unicode/cldr",
+    "unicode/norm"
+  ]
+  revision = "f21a4dfb5e38f5895301dc265a8def02365cc3d0"
+  version = "v0.3.0"
+
+[[projects]]
   name = "gopkg.in/yaml.v2"
   packages = ["."]
-  revision = "eb3733d160e74a9c7e442f435eb3bea458e1d19f"
+  revision = "86f5ed62f8a0ee96bd888d2efdfd6d4fb100a4eb"
+  version = "v2.2.0"
 
 [[projects]]
   branch = "master"
   name = "k8s.io/apimachinery"
   packages = ["pkg/version"]
-  revision = "18a564baac720819100827c16fdebcadb05b2d0d"
+  revision = "7175867f4d9f782220ceae4fc323e3aaae35f23a"
 
 [[projects]]
   name = "k8s.io/helm"
-  packages = ["pkg/chartutil","pkg/ignore","pkg/proto/hapi/chart","pkg/proto/hapi/version","pkg/version"]
-  revision = "08c1144f5eb3e3b636d9775617287cc26e53dba4"
-  version = "v2.7.0"
+  packages = [
+    "pkg/chartutil",
+    "pkg/ignore",
+    "pkg/proto/hapi/chart",
+    "pkg/proto/hapi/version",
+    "pkg/sympath",
+    "pkg/version"
+  ]
+  revision = "a80231648a1473929271764b920a8e346f6de844"
+  version = "v2.8.2"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "789c399dbd33a9a60853bff5825af3f7305a40151c80044739fda3aa61ca386b"
+  inputs-digest = "23c8a2248a4ee6d9928c289b41d91ea6857efe7e8c87eef8f14a0d370aa216e1"
   solver-name = "gps-cdcl"
   solver-version = 1

@@ -7,6 +7,7 @@ Helm provides access to files through the `.Files` object. Before we get going w
 - It is okay to add extra files to your Helm chart. These files will be bundled and sent to Tiller. Be careful, though. Charts must be smaller than 1M because of the storage limitations of Kubernetes objects.
 - Some files cannot be accessed through the `.Files` object, usually for security reasons.
 	- Files in `templates/` cannot be accessed.
+	- Files excluded using `.helmignore` cannot be accessed.
 - Charts do not preserve UNIX mode information, so file-level permissions will have no impact on the availability of a file when it comes to the `.Files` object.
 
 <!-- (see https://github.com/jonschlinkert/markdown-toc) -->
@@ -143,7 +144,7 @@ couple utility methods on the `Files` type.
 For further organization, it is especially useful to use these methods in
 conjunction with the `Glob` method.
 
-Given the directory structure from the [Glob][Glob patterns] example above:
+Given the directory structure from the [Glob](#glob-patterns) example above:
 
 ```yaml
 apiVersion: v1

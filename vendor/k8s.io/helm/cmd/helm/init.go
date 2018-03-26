@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"time"
 
 	"github.com/spf13/cobra"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -31,7 +32,9 @@ import (
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/helm/cmd/helm/installer"
 	"k8s.io/helm/pkg/getter"
+	"k8s.io/helm/pkg/helm"
 	"k8s.io/helm/pkg/helm/helmpath"
+	"k8s.io/helm/pkg/helm/portforwarder"
 	"k8s.io/helm/pkg/repo"
 )
 
@@ -76,13 +79,16 @@ type initCmd struct {
 	upgrade        bool
 	namespace      string
 	dryRun         bool
+	forceUpgrade   bool
 	skipRefresh    bool
 	out            io.Writer
+	client         helm.Interface
 	home           helmpath.Home
 	opts           installer.Options
 	kubeClient     kubernetes.Interface
 	serviceAccount string
 	maxHistory     int
+	wait           bool
 }
 
 func newInitCmd(out io.Writer) *cobra.Command {
@@ -98,6 +104,8 @@ func newInitCmd(out io.Writer) *cobra.Command {
 			}
 			i.namespace = settings.TillerNamespace
 			i.home = settings.Home
+			i.client = ensureHelmClient(i.client)
+
 			return i.run()
 		},
 	}
@@ -106,9 +114,11 @@ func newInitCmd(out io.Writer) *cobra.Command {
 	f.StringVarP(&i.image, "tiller-image", "i", "", "override Tiller image")
 	f.BoolVar(&i.canary, "canary-image", false, "use the canary Tiller image")
 	f.BoolVar(&i.upgrade, "upgrade", false, "upgrade if Tiller is already installed")
+	f.BoolVar(&i.forceUpgrade, "force-upgrade", false, "force upgrade of Tiller to the current helm version")
 	f.BoolVarP(&i.clientOnly, "client-only", "c", false, "if set does not install Tiller")
 	f.BoolVar(&i.dryRun, "dry-run", false, "do not install local or remote")
 	f.BoolVar(&i.skipRefresh, "skip-refresh", false, "do not refresh (download) the local repository cache")
+	f.BoolVar(&i.wait, "wait", false, "block until Tiller is running and ready to receive requests")
 
 	f.BoolVar(&tlsEnable, "tiller-tls", false, "install Tiller with TLS enabled")
 	f.BoolVar(&tlsVerify, "tiller-tls-verify", false, "install Tiller with TLS enabled and to verify remote certificates")
@@ -164,6 +174,7 @@ func (i *initCmd) run() error {
 	i.opts.Namespace = i.namespace
 	i.opts.UseCanary = i.canary
 	i.opts.ImageSpec = i.image
+	i.opts.ForceUpgrade = i.forceUpgrade
 	i.opts.ServiceAccount = i.serviceAccount
 	i.opts.MaxHistory = i.maxHistory
 
@@ -289,19 +300,50 @@ func (i *initCmd) run() error {
 				if err := installer.Upgrade(i.kubeClient, &i.opts); err != nil {
 					return fmt.Errorf("error when upgrading: %s", err)
 				}
+				if err := i.ping(); err != nil {
+					return err
+				}
 				fmt.Fprintln(i.out, "\nTiller (the Helm server-side component) has been upgraded to the current version.")
 			} else {
 				fmt.Fprintln(i.out, "Warning: Tiller is already installed in the cluster.\n"+
 					"(Use --client-only to suppress this message, or --upgrade to upgrade Tiller to the current version.)")
 			}
 		} else {
-			fmt.Fprintln(i.out, "\nTiller (the Helm server-side component) has been installed into your Kubernetes Cluster.")
+			fmt.Fprintln(i.out, "\nTiller (the Helm server-side component) has been installed into your Kubernetes Cluster.\n\n"+
+				"Please note: by default, Tiller is deployed with an insecure 'allow unauthenticated users' policy.\n"+
+				"For more information on securing your installation see: https://docs.helm.sh/using_helm/#securing-your-helm-installation")
+		}
+		if err := i.ping(); err != nil {
+			return err
 		}
 	} else {
 		fmt.Fprintln(i.out, "Not installing Tiller due to 'client-only' flag having been set")
 	}
 
 	fmt.Fprintln(i.out, "Happy Helming!")
+	return nil
+}
+
+func (i *initCmd) ping() error {
+	if i.wait {
+		_, kubeClient, err := getKubeClient(settings.KubeContext)
+		if err != nil {
+			return err
+		}
+		if !watchTillerUntilReady(settings.TillerNamespace, kubeClient, settings.TillerConnectionTimeout) {
+			return fmt.Errorf("tiller was not found. polling deadline exceeded")
+		}
+
+		// establish a connection to Tiller now that we've effectively guaranteed it's available
+		if err := setupConnection(); err != nil {
+			return err
+		}
+		i.client = newClient()
+		if err := i.client.PingTiller(); err != nil {
+			return fmt.Errorf("could not ping Tiller: %s", err)
+		}
+	}
+
 	return nil
 }
 
@@ -390,7 +432,7 @@ func initLocalRepo(indexFile, cacheFile string, out io.Writer) (*repo.Entry, err
 		}
 
 		//TODO: take this out and replace with helm update functionality
-		os.Symlink(indexFile, cacheFile)
+		createLink(indexFile, cacheFile)
 	} else if fi.IsDir() {
 		return nil, fmt.Errorf("%s must be a file, not a directory", indexFile)
 	}
@@ -412,4 +454,35 @@ func ensureRepoFileFormat(file string, out io.Writer) error {
 	}
 
 	return nil
+}
+
+// watchTillerUntilReady waits for the tiller pod to become available. This is useful in situations where we
+// want to wait before we call New().
+//
+// Returns true if it exists. If the timeout was reached and it could not find the pod, it returns false.
+func watchTillerUntilReady(namespace string, client kubernetes.Interface, timeout int64) bool {
+	deadlinePollingChan := time.NewTimer(time.Duration(timeout) * time.Second).C
+	checkTillerPodTicker := time.NewTicker(500 * time.Millisecond)
+	doneChan := make(chan bool)
+
+	defer checkTillerPodTicker.Stop()
+
+	go func() {
+		for range checkTillerPodTicker.C {
+			_, err := portforwarder.GetTillerPodName(client.CoreV1(), namespace)
+			if err == nil {
+				doneChan <- true
+				break
+			}
+		}
+	}()
+
+	for {
+		select {
+		case <-deadlinePollingChan:
+			return false
+		case <-doneChan:
+			return true
+		}
+	}
 }

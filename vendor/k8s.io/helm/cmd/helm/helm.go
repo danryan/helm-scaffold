@@ -45,6 +45,10 @@ var (
 	tlsVerify     bool   // enable TLS and verify remote certificates
 	tlsEnable     bool   // enable TLS
 
+	tlsCaCertDefault = "$HELM_HOME/ca.pem"
+	tlsCertDefault   = "$HELM_HOME/cert.pem"
+	tlsKeyDefault    = "$HELM_HOME/key.pem"
+
 	tillerTunnel *kube.Tunnel
 	settings     helm_env.EnvSettings
 )
@@ -162,7 +166,7 @@ func markDeprecated(cmd *cobra.Command, notice string) *cobra.Command {
 	return cmd
 }
 
-func setupConnection(c *cobra.Command, args []string) error {
+func setupConnection() error {
 	if settings.TillerHost == "" {
 		config, client, err := getKubeClient(settings.KubeContext)
 		if err != nil {
@@ -174,7 +178,7 @@ func setupConnection(c *cobra.Command, args []string) error {
 			return err
 		}
 
-		settings.TillerHost = fmt.Sprintf("localhost:%d", tunnel.Local)
+		settings.TillerHost = fmt.Sprintf("127.0.0.1:%d", tunnel.Local)
 		debug("Created tunnel using local port: '%d'\n", tunnel.Local)
 	}
 
@@ -260,9 +264,19 @@ func ensureHelmClient(h helm.Interface) helm.Interface {
 }
 
 func newClient() helm.Interface {
-	options := []helm.Option{helm.Host(settings.TillerHost)}
+	options := []helm.Option{helm.Host(settings.TillerHost), helm.ConnectTimeout(settings.TillerConnectionTimeout)}
 
 	if tlsVerify || tlsEnable {
+		if tlsCaCertFile == "" {
+			tlsCaCertFile = settings.Home.TLSCaCert()
+		}
+		if tlsCertFile == "" {
+			tlsCertFile = settings.Home.TLSCert()
+		}
+		if tlsKeyFile == "" {
+			tlsKeyFile = settings.Home.TLSKey()
+		}
+		debug("Key=%q, Cert=%q, CA=%q\n", tlsKeyFile, tlsCertFile, tlsCaCertFile)
 		tlsopts := tlsutil.Options{KeyFile: tlsKeyFile, CertFile: tlsCertFile, InsecureSkipVerify: true}
 		if tlsVerify {
 			tlsopts.CaCertFile = tlsCaCertFile
@@ -281,12 +295,6 @@ func newClient() helm.Interface {
 // addFlagsTLS adds the flags for supporting client side TLS to the
 // helm command (only those that invoke communicate to Tiller.)
 func addFlagsTLS(cmd *cobra.Command) *cobra.Command {
-	// defaults
-	var (
-		tlsCaCertDefault = "$HELM_HOME/ca.pem"
-		tlsCertDefault   = "$HELM_HOME/cert.pem"
-		tlsKeyDefault    = "$HELM_HOME/key.pem"
-	)
 
 	// add flags
 	cmd.Flags().StringVar(&tlsCaCertFile, "tls-ca-cert", tlsCaCertDefault, "path to TLS CA certificate file")

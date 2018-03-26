@@ -3,9 +3,12 @@ package main
 import (
 	"errors"
 	"fmt"
-	"html/template"
 	"os"
+	"strings"
 
+	"github.com/alecthomas/template"
+	"github.com/davecgh/go-spew/spew"
+	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	"k8s.io/helm/pkg/chartutil"
 	"k8s.io/helm/pkg/proto/hapi/chart"
@@ -26,6 +29,7 @@ func main() {
 }
 
 func run(cmd *cobra.Command, args []string) error {
+	// multiwriter := io.MultiWriter(os.Stdout)
 	if len(args) < 1 {
 		return errors.New("chart is required")
 	}
@@ -46,10 +50,35 @@ func run(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	tpl := template.New("template")
-	tpl.Delims("%%", "%%")
-	tpl.Parse(templateMap(t))
+	bp := afero.NewBasePathFs(afero.NewOsFs(), "./templates")
+	files, err := afero.ReadDir(bp, ".")
+	if err != nil {
+		return err
+	}
+
+	outputs := make(map[string]string, len(files))
+
+	for _, file := range files {
+		name := strings.Split(file.Name(), ".")
+
+		contents, err := afero.ReadFile(bp, file.Name())
+		if err != nil {
+			return err
+		}
+
+		outputs[name[0]] = string(contents)
+
+		// t.Execute(os.Stdout, vals)
+	}
+	spew.Dump(outputs)
+	tpl := template.New(t)
+	tpl.Delims("((", "))")
+	tpl.Parse(outputs[t])
 	tpl.Execute(os.Stdout, vals)
+	// tpl := template.New("template")
+	// tpl.Delims("((", "))")
+	// tpl.Parse(templateMap(t))
+	// tpl.Execute(os.Stdout, vals)
 
 	return nil
 }
