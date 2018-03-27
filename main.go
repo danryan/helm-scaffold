@@ -5,43 +5,49 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"text/template"
 
-	"github.com/alecthomas/template"
-	"github.com/davecgh/go-spew/spew"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	"k8s.io/helm/pkg/chartutil"
 	"k8s.io/helm/pkg/proto/hapi/chart"
 )
 
+var (
+	flagVerbose bool
+	flagForce   bool
+)
+
 func main() {
 	cmd := &cobra.Command{
-		Use:   "scaffold [flags] TYPE CHART",
+		Use:   "scaffold [flags] TYPE [CHART]",
 		Short: fmt.Sprintf("create templates from other templates"),
 		RunE:  run,
 	}
 
-	// f := cmd.Flags()
-
+	f := cmd.Flags()
+	f.BoolVarP(&flagVerbose, "verbose", "v", false, "render templates to STDOUT also")
+	f.BoolVarP(&flagForce, "force", "f", false, "force overwriting templates, even if they already exist")
 	if err := cmd.Execute(); err != nil {
 		os.Exit(1)
 	}
 }
 
 func run(cmd *cobra.Command, args []string) error {
-	// multiwriter := io.MultiWriter(os.Stdout)
 	if len(args) < 1 {
-		return errors.New("chart is required")
+		return errors.New("template type is required")
 	}
-	c, err := chartutil.Load(args[0])
+	typ := args[0]
+
+	if len(args) < 2 {
+		// assume chart is in current directory
+		args = append(args, ".")
+	}
+
+	c, err := chartutil.Load(args[1])
 	if err != nil {
 		return err
 	}
-
-	if len(args) < 2 {
-		return errors.New("template type is required")
-	}
-	t := args[1]
 
 	config := &chart.Config{Values: map[string]*chart.Value{}}
 
@@ -70,10 +76,9 @@ func run(cmd *cobra.Command, args []string) error {
 
 		// t.Execute(os.Stdout, vals)
 	}
-	spew.Dump(outputs)
-	tpl := template.New(t)
+	tpl := template.New(typ)
 	tpl.Delims("((", "))")
-	tpl.Parse(outputs[t])
+	tpl.Parse(outputs[typ])
 	tpl.Execute(os.Stdout, vals)
 	// tpl := template.New("template")
 	// tpl.Delims("((", "))")
