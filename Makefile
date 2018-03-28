@@ -7,26 +7,30 @@ LDFLAGS := "-X main.version=${VERSION}"
 OUT := "scaffold" 
 
 .PHONY: install
-install: bootstrap build
-	cp scaffold $(HELM_PLUGIN_DIR)
+install: build
+	cp $(DIST)/darwin/scaffold $(HELM_PLUGIN_DIR)
 	cp plugin.yaml $(HELM_PLUGIN_DIR)
+	cp -Rf templates $(HELM_PLUGIN_DIR)
 
 .PHONY: hook-install
-hookInstall: bootstrap build
+hook-install: bootstrap build
 
 .PHONY: build
 build:
-	go build -o scaffold -ldflags $(LDFLAGS) ./main.go
+	go build -o $(DIST)/darwin/scaffold -ldflags $(LDFLAGS) ./main.go
+
 
 .PHONY: dist
 dist:
-	mkdir -p $(DIST)
-	GOOS=linux GOARCH=amd64 go build -o scaffold -ldflags $(LDFLAGS) ./main.go
-	tar -zcvf $(DIST)/helm-scaffold-linux-$(VERSION).tgz scaffold README.md LICENSE.txt plugin.yaml templates
-	GOOS=darwin GOARCH=amd64 go build -o scaffold -ldflags $(LDFLAGS) ./main.go
-	tar -zcvf $(DIST)/helm-scaffold-macos-$(VERSION).tgz scaffold README.md LICENSE.txt plugin.yaml templates
-	GOOS=windows GOARCH=amd64 go build -o scaffold.exe -ldflags $(LDFLAGS) ./main.go
-	tar -zcvf $(DIST)/helm-scaffold-windows-$(VERSION).tgz scaffold.exe README.md LICENSE.txt plugin.yaml templates
+	mkdir -p $(DIST)/linux
+	GOOS=linux GOARCH=amd64 go build -o $(DIST)/linux/scaffold -ldflags $(LDFLAGS) ./main.go
+	tar -zcvf $(DIST)/helm-scaffold-linux-$(VERSION).tgz $(DIST)/linux/scaffold README.md LICENSE.txt plugin.yaml templates
+	mkdir -p $(DIST)/darwin
+	GOOS=darwin GOARCH=amd64 go build -o $(DIST)/darwin/scaffold -ldflags $(LDFLAGS) ./main.go
+	tar -zcvf $(DIST)/helm-scaffold-darwin-$(VERSION).tgz $(DIST)/darwin/scaffold README.md LICENSE.txt plugin.yaml templates
+	mkdir -p $(DIST)/windows
+	GOOS=windows GOARCH=amd64 go build -o $(DIST)/windows/scaffold.exe -ldflags $(LDFLAGS) ./main.go
+	tar -zcvf $(DIST)/helm-scaffold-windows-$(VERSION).tgz $(DIST)/windows/scaffold.exe README.md LICENSE.txt plugin.yaml templates
 
 .PHONY: bootstrap
 bootstrap:

@@ -12,3 +12,4 @@
 *.out
 
 scaffold*
+_dist/*
