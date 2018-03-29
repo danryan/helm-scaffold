@@ -51,7 +51,7 @@ initOS() {
 # verifySupported checks that the os/arch combination is supported for
 # binary builds.
 verifySupported() {
-  local supported="linux-amd64\nmacos-amd64\nwindows-amd64"
+  local supported="linux-amd64\ndarwin-amd64\nwindows-amd64"
   if ! echo "${supported}" | grep -q "${OS}-${ARCH}"; then
     echo "No prebuild binary for ${OS}-${ARCH}."
     exit 1
@@ -92,7 +92,7 @@ installFile() {
   HELM_TMP="/tmp/$PROJECT_NAME"
   mkdir -p "$HELM_TMP"
   tar xf "$PLUGIN_TMP_FILE" -C "$HELM_TMP"
-  HELM_TMP_BIN="$HELM_TMP/tpl"
+  HELM_TMP_BIN="$HELM_TMP/scaffold"
   echo "Preparing to install into ${HELM_PLUGIN_PATH}"
   # Use * to also copy the file withe the exe suffix on Windows
   cp "$HELM_TMP_BIN"* "$HELM_PLUGIN_PATH"
@@ -115,7 +115,7 @@ testVersion() {
   # To avoid to keep track of the Windows suffix,
   # call the plugin assuming it is in the PATH
   PATH=$PATH:$HELM_PLUGIN_PATH
-  tpl -h
+  scaffold -h
   set -e
 }
 

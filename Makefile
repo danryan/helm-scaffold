@@ -24,13 +24,13 @@ build:
 dist:
 	mkdir -p $(DIST)/linux
 	GOOS=linux GOARCH=amd64 go build -o $(DIST)/linux/scaffold -ldflags $(LDFLAGS) ./main.go
-	tar -zcvf $(DIST)/helm-scaffold-linux-$(VERSION).tgz $(DIST)/linux/scaffold README.md LICENSE.txt plugin.yaml templates
+	tar -zcvf $(DIST)/helm-scaffold-linux-$(VERSION).tgz README.md LICENSE.txt plugin.yaml templates -C $(DIST)/linux/ scaffold
 	mkdir -p $(DIST)/darwin
 	GOOS=darwin GOARCH=amd64 go build -o $(DIST)/darwin/scaffold -ldflags $(LDFLAGS) ./main.go
-	tar -zcvf $(DIST)/helm-scaffold-darwin-$(VERSION).tgz $(DIST)/darwin/scaffold README.md LICENSE.txt plugin.yaml templates
+	tar -zcvf $(DIST)/helm-scaffold-darwin-$(VERSION).tgz README.md LICENSE.txt plugin.yaml templates -C $(DIST)/darwin/ scaffold 
 	mkdir -p $(DIST)/windows
 	GOOS=windows GOARCH=amd64 go build -o $(DIST)/windows/scaffold.exe -ldflags $(LDFLAGS) ./main.go
-	tar -zcvf $(DIST)/helm-scaffold-windows-$(VERSION).tgz $(DIST)/windows/scaffold.exe README.md LICENSE.txt plugin.yaml templates
+	tar -zcvf $(DIST)/helm-scaffold-windows-$(VERSION).tgz README.md LICENSE.txt plugin.yaml templates -C $(DIST)/windows/ scaffold.exe
 
 .PHONY: bootstrap
 bootstrap:
