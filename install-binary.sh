@@ -44,7 +44,7 @@ initOS() {
     msys*) OS='windows';;
     # Minimalist GNU for Windows
     mingw*) OS='windows';;
-    darwin) OS='macos';;
+    darwin) OS='darwin';;
   esac
 }
 
