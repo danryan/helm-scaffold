@@ -9,42 +9,45 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/davecgh/go-spew/spew"
-
 	"github.com/danryan/helm-scaffold/scaffold"
 	"github.com/spf13/cobra"
+	yaml "gopkg.in/yaml.v2"
 	"k8s.io/helm/pkg/chartutil"
 	"k8s.io/helm/pkg/proto/hapi/chart"
+	"k8s.io/helm/pkg/strvals"
 )
 
-var (
-	flagVerbose     bool
-	flagForce       bool
-	flagDryRun      bool
-	flagTemplateDir string
-	flagName        string
-	flagDelims      []string
-)
+type runVars struct {
+	verbose     bool
+	force       bool
+	dryRun      bool
+	templateDir string
+	prefix      string
+	delims      []string
+	chartPath   string
+	values      []string
+}
 
 var cmd = &cobra.Command{
-	Use:   "scaffold [flags] TYPE [CHART]",
+	Use:   "scaffold TYPE [CHART] [flags]",
 	Short: fmt.Sprintf("create templates from other templates"),
 	RunE:  run,
 }
 
+var r = &runVars{}
+
 func main() {
 	f := cmd.Flags()
-	f.BoolVarP(&flagVerbose, "verbose", "v", false, "also render templates to STDOUT")
-	f.BoolVarP(&flagForce, "force", "f", false, "force overwriting templates, even if they already exist")
-	f.BoolVarP(&flagDryRun, "dry-run", "r", false, "only run through the process; do not write any files")
-	f.StringVar(&flagTemplateDir, "templates", path.Join(os.Getenv("HELM_PLUGIN_DIR"), "templates"), "directory to look for templates")
-	f.StringVarP(&flagName, "name", "n", "", "name of the generated template")
-	f.StringSliceVarP(&flagDelims, "delims", "d", []string{"<%", "%>"}, "default left and right template delimiters")
-	cmd.MarkFlagRequired("name")
+	f.BoolVarP(&r.verbose, "verbose", "v", false, "also render templates to STDOUT")
+	f.BoolVarP(&r.force, "force", "f", false, "force overwriting templates, even if they already exist")
+	f.BoolVarP(&r.dryRun, "dry-run", "r", false, "only run through the process; do not write any files")
+	f.StringVar(&r.templateDir, "templates", path.Join(os.Getenv("HELM_PLUGIN_DIR"), "templates"), "directory to look for templates")
+	f.StringVarP(&r.prefix, "prefix", "p", "", "prefix for the generated template filename (`helm scaffold configmap chart -p foo -> foo-configmap.yaml`")
+	f.StringSliceVarP(&r.delims, "delims", "d", []string{"<%", "%>"}, "default left and right template delimiters")
+	f.StringArrayVar(&r.values, "set", []string{}, "set values on the command line (can specify multiple times or separate values with commas: key1=val1,key2=val2)")
+	// cmd.MarkFlagRequired("name")
 
-	// f.BoolVarP(&flagVerbose, "verbose", "v", false, "render templates to STDOUT also")
 	if err := cmd.Execute(); err != nil {
-		spew.Dump(err)
 		os.Exit(1)
 	}
 }
@@ -60,24 +63,29 @@ func run(cmd *cobra.Command, args []string) error {
 		args = append(args, ".")
 	}
 
-	chartDir, err := filepath.Abs(args[1])
+	cp, err := filepath.Abs(args[1])
 	if err != nil {
 		return errors.New("Error: chart directory does not exist")
 	}
+	r.chartPath = cp
 
-	c, err := chartutil.Load(chartDir)
+	c, err := chartutil.Load(r.chartPath)
 	if err != nil {
 		return err
 	}
 
-	config := &chart.Config{Values: map[string]*chart.Value{}}
+	vv, err := vals(r.values)
+	if err != nil {
+		return err
+	}
+	config := &chart.Config{Raw: string(vv), Values: map[string]*chart.Value{}}
 
 	vals, err := chartutil.ToRenderValues(c, config, chartutil.ReleaseOptions{})
 	if err != nil {
 		return err
 	}
 
-	files, err := ioutil.ReadDir(flagTemplateDir)
+	files, err := ioutil.ReadDir(r.templateDir)
 	if err != nil {
 		return err
 	}
@@ -90,7 +98,7 @@ func run(cmd *cobra.Command, args []string) error {
 			continue
 		}
 
-		contents, err := ioutil.ReadFile(path.Join(flagTemplateDir, file.Name()))
+		contents, err := ioutil.ReadFile(path.Join(r.templateDir, file.Name()))
 		if err != nil {
 			return err
 		}
@@ -98,26 +106,40 @@ func run(cmd *cobra.Command, args []string) error {
 		kind := file[0]
 		ext := file[1]
 		tpl := scaffold.Template{
-			Name:    flagName,
 			Kind:    kind,
 			Ext:     ext,
 			Content: string(contents),
 		}
+		if r.prefix != "" {
+			tpl.Prefix = r.prefix
+		}
 		templates[kind] = tpl
 	}
 	options := &scaffold.EngineOptions{
-		Verbose:    flagVerbose,
-		DryRun:     flagDryRun,
-		ChartPath:  chartDir,
-		LeftDelim:  flagDelims[0],
-		RightDelim: flagDelims[1],
+		Verbose:    r.verbose,
+		DryRun:     r.dryRun,
+		ChartPath:  r.chartPath,
+		LeftDelim:  r.delims[0],
+		RightDelim: r.delims[1],
+		Prefix:     r.prefix,
 	}
-	spew.Dump(options)
 
 	scaffold := scaffold.New(templates[kind], vals, options)
-
 	if err := scaffold.Render(); err != nil {
 		return fmt.Errorf("Error: rendering template: %s", err)
 	}
+
 	return nil
+}
+
+func vals(values []string) ([]byte, error) {
+	base := map[string]interface{}{}
+
+	for _, value := range values {
+		if err := strvals.ParseInto(value, base); err != nil {
+			return []byte{}, fmt.Errorf("failed parsing --set data: %s", err)
+		}
+	}
+
+	return yaml.Marshal(base)
 }

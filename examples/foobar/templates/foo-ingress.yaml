@@ -1,16 +1,16 @@
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
-  name: {{ template "foobar.fullname" . }}
+  name: {{ template "foobar.fullname" . }}-server
   labels:
     app: {{ template "foobar.name" . }}
     chart: {{ template "foobar.chartref" . }}
     heritage: {{ .Release.Service | quote }}
     release: {{ .Release.Name | quote }}
-  {{- if .Values.ingress.annotations }}
+{{- if .Values.ingress.annotations }}
   annotations:
-    {{ include "common.annote" .Values.ingress.annotations | indent 4 }}
-  {{- end }}
+{{ toYaml .Values.ingress.annotations | indent 4 }}
+{{- end }}
 spec:
   rules:
   {{- range $host := .Values.ingress.hosts }}
@@ -21,8 +21,8 @@ spec:
         backend:
           serviceName: {{ template "foobar.fullname" $ }}
           servicePort: 80
-  {{- end }}
-  {{- if .Values.ingress.tls }}
+{{- end }}
+{{- if .Values.ingress.tls }}
   tls:
 {{ toYaml .Values.ingress.tls | indent 4 }}
-  {{- end -}}
+{{- end -}}

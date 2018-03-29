@@ -102,6 +102,12 @@
   revision = "a1f051bc3eba734da4772d60e2d677f47cf93ef4"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/spf13/jwalterweatherman"
+  packages = ["."]
+  revision = "7c0cea34c8ece3fbeb2b27ab9b59511d360fb394"
+
+[[projects]]
   name = "github.com/spf13/pflag"
   packages = ["."]
   revision = "e57e3eeb33f795204c1ca35f56c44f83227c6e66"
@@ -157,6 +163,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "7521c4e43b521981f25cd9676dd8aedb86e29eee3e90fff425908e9b3e73eaf9"
+  inputs-digest = "56f399814e7a87262c2620e9794fb533979b89f787d068bc05536e78c4cd06db"
   solver-name = "gps-cdcl"
   solver-version = 1

@@ -1,10 +1,10 @@
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
-  name: {{ template "<% .Chart.Name %>.fullname" . }}<%- if .Values.component -%>-<%- .Values.component %><%- end %>
+  name: {{ template "foobar.fullname" . }}-server
   labels:
-    app: {{ template "<% .Chart.Name %>.name" . }}
-    chart: {{ template "<% .Chart.Name %>.chartref" . }}
+    app: {{ template "foobar.name" . }}
+    chart: {{ template "foobar.chartref" . }}
     heritage: {{ .Release.Service | quote }}
     release: {{ .Release.Name | quote }}
 {{- if .Values.ingress.annotations }}
@@ -19,7 +19,7 @@ spec:
       paths:
       - path: /
         backend:
-          serviceName: {{ template "<% .Chart.Name %>.fullname" $ }}
+          serviceName: {{ template "foobar.fullname" $ }}
           servicePort: 80
 {{- end }}
 {{- if .Values.ingress.tls }}
