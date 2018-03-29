@@ -1,17 +1,17 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: {{ template "(( .Chart.Name )).fullname" . }}
+  name: {{ template "<% .Chart.Name %>.fullname" . }}
   labels:
-    app: {{ template "(( .Chart.Name )).name" . }}
-    chart: {{ template "(( .Chart.Name )).chartref" . }}
+    app: {{ template "<% .Chart.Name %>.name" . }}
+    chart: {{ template "<% .Chart.Name %>.chartref" . }}
     heritage: {{ .Release.Service | quote }}
     release: {{ .Release.Name | quote }}
 spec:
   template:
     metadata:
       labels:
-        app: {{ template "(( .Chart.Name )).name" . }}
+        app: {{ template "<% .Chart.Name %>.name" . }}
         release: {{ .Release.Name | quote }}
     spec:
       containers:

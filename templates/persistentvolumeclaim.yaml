@@ -1,10 +1,10 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: {{ template "(( .Chart.Name )).fullname" . }}
+  name: {{ template "<% .Chart.Name %>.fullname" . }}
   labels:
-    app: {{ template "(( .Chart.Name )).name" . }}
-    chart: {{ template "(( .Chart.Name )).chartref" . }}
+    app: {{ template "<% .Chart.Name %>.name" . }}
+    chart: {{ template "<% .Chart.Name %>.chartref" . }}
     heritage: {{ .Release.Service | quote }}
     release: {{ .Release.Name | quote }}
 spec:
@@ -20,9 +20,3 @@ spec:
   storageClassName: "{{ .Values.persistence.storageClass }}"
 {{- end }}
 {{- end }}
-{{- end -}}
-{{- define "common.persistentvolumeclaim" -}}
-{{- $top := first . -}}
-{{- if and $top.Values.persistence.enabled (not $top.Values.persistence.existingClaim) -}}
-{{- template "common.util.merge" (append . "common.persistentvolumeclaim.tpl") -}}
-{{- end -}}
