@@ -26,12 +26,6 @@
   version = "v1.0.1"
 
 [[projects]]
-  name = "github.com/davecgh/go-spew"
-  packages = ["spew"]
-  revision = "346938d642f2ec3594ed81d874461961cd0faa76"
-  version = "v1.1.0"
-
-[[projects]]
   name = "github.com/ghodss/yaml"
   packages = ["."]
   revision = "0ca9ea5df5451ffdf184b4428c902747c2c11cd7"
@@ -138,14 +132,14 @@
 [[projects]]
   name = "gopkg.in/yaml.v2"
   packages = ["."]
-  revision = "86f5ed62f8a0ee96bd888d2efdfd6d4fb100a4eb"
-  version = "v2.2.0"
+  revision = "5420a8b6744d3b0345ab293f6fcba19c978f1183"
+  version = "v2.2.1"
 
 [[projects]]
   branch = "master"
   name = "k8s.io/apimachinery"
   packages = ["pkg/version"]
-  revision = "7175867f4d9f782220ceae4fc323e3aaae35f23a"
+  revision = "0ed326127d3068118ef128c76673dad6005736ba"
 
 [[projects]]
   name = "k8s.io/helm"
@@ -154,6 +148,7 @@
     "pkg/ignore",
     "pkg/proto/hapi/chart",
     "pkg/proto/hapi/version",
+    "pkg/strvals",
     "pkg/sympath",
     "pkg/version"
   ]
@@ -163,6 +158,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "56f399814e7a87262c2620e9794fb533979b89f787d068bc05536e78c4cd06db"
+  inputs-digest = "6cab2b443dbc77a385ea79414d327a93f258b10c32844b94e0464cf23477258b"
   solver-name = "gps-cdcl"
   solver-version = 1
