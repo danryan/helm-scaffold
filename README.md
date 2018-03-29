@@ -13,13 +13,13 @@ $ helm scaffold [flags] TYPE CHART]
 ### Flags
 
 ```
-  -d, --delims stringSlice   default left and right template delimiters (default [<%,%>])
-  -r, --dry-run              only run through the process; do not write any files
-  -f, --force                force overwriting templates, even if they already exist
-  -h, --help                 help for scaffold
-      --set string      set values on the command line (can specify multiple times or separate values with commas: key1=val1,key2=val2)
-      --templates path     directory to look for templates (default "/Users/dan/.helm/plugins/helm-scaffold/templates")
-  -v, --verbose              also render templates to STDOUT
+  -d, --delims stringSlice                                                  default left and right template delimiters (default [<%,%>])
+  -r, --dry-run                                                             only run through the process; do not write any files
+  -f, --force                                                               force overwriting templates, even if they already exist
+  -h, --help                                                                help for scaffold
+  -p, --prefix string                                                       prefix for the generated template filename (helm scaffold configmap chart -p foo -> foo-configmap.yaml
+      --set stringArray                                                     set values on the command line (can specify multiple times or separate values with commas: key1=val1,key2=val2)
+      --templates string                                                    directory to look for templates (default "$HELM_PLUGIN_DIR/templates")
 ```
 
 ### Install
